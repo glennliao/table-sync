@@ -1,20 +1,20 @@
 package tablesync
 
 import (
-	"fmt"
+	"context"
 	"github.com/glennliao/table-sync/model"
+	"github.com/gogf/gf/v2/container/gvar"
 	"github.com/gogf/gf/v2/os/gstructs"
 	"github.com/gogf/gf/v2/text/gstr"
-	"github.com/gogf/gf/v2/util/gmeta"
 )
 
-func getFromStruct(tables []Table) map[string]*model.Table {
-	structList := tables
-	var tableMap = map[string]*model.Table{}
-	for _, s := range structList {
+func (s *Syncer) schemaInCode(structTableList []Table) model.Schema {
+	tableMap := map[string]*model.Table{}
+
+	for _, table := range structTableList {
 
 		fields, err := fields(gstructs.FieldsInput{
-			Pointer:         s,
+			Pointer:         table,
 			RecursiveOption: gstructs.RecursiveOptionEmbedded,
 		})
 
@@ -23,10 +23,14 @@ func getFromStruct(tables []Table) map[string]*model.Table {
 		}
 
 		indexMap := map[string]*model.Index{}
+
 		var cols []model.Column
+
 		for _, field := range fields {
 
+			// column
 			colType := field.Type().String()
+
 			col := model.Column{
 				Field: gstr.CaseSnake(field.Name()),
 				Type:  colType,
@@ -34,50 +38,38 @@ func getFromStruct(tables []Table) map[string]*model.Table {
 
 			col = parseDdlTag(col, field.Tag("ddl"))
 
-			switch colType {
-			case "base.Time":
-				colType = "datetime"
-			case "string":
-				colType = "varchar"
-				if col.DDLTag["size"] != "" {
-					colType += fmt.Sprintf("(%s)", col.DDLTag["size"])
-				} else {
-					colType += "(256)"
-				}
-			case "uint32":
-				colType = "int unsigned"
-			case "int32":
-				colType = "int"
-			case "int8":
-				colType = "tinyint"
-			case "uint8":
-				colType = "smallint unsigned"
-			case "uint16":
-				colType = "smallint unsigned"
-			case "int64":
-				colType = "bigint"
-			case "uint64":
-				colType = "bigint unsigned"
+			if col.DDLTag[model.DDLPrimaryKey] == "true" {
+				col.PrimaryKey = true
 			}
-
-			col.Type = colType
 
 			if col.DDLTag["type"] != "" {
 				col.Type = col.DDLTag["type"]
 			}
-			if col.DDLTag["default"] != "" {
-				col.Default = col.DDLTag["default"]
-			}
-			if col.DDLTag["not null"] != "" || col.DDLTag["primaryKey"] != "" {
+
+			if col.DDLTag["not null"] != "" || col.DDLTag[model.DDLPrimaryKey] != "" {
 				col.NotNull = "not null"
 			} else {
 				col.NotNull = "null"
 			}
 
+			if col.DDLTag["default"] != "" {
+				col.Default = col.DDLTag["default"]
+			} else {
+				if col.NotNull == "null" {
+					col.Default = "NULL"
+				}
+
+			}
+
+			col.Size = col.DDLTag["size"]
+
+			col.Type = s.DatabaseDriver.GetSqlType(context.Background(), col.Type, col.Size)
+
 			cols = append(cols, col)
 
+			// index
 			colIndex := col.DDLTag["index"]
-			colUniqueIndex := col.DDLTag["uniqueIndex"]
+			colUniqueIndex := col.DDLTag[model.DDLUniqueIndex]
 
 			if colIndex != "" || colUniqueIndex != "" {
 				index := &model.Index{}
@@ -107,15 +99,19 @@ func getFromStruct(tables []Table) map[string]*model.Table {
 			}
 		}
 
-		t, err := gstructs.StructType(s)
-		commentVal := gmeta.Get(s, "comment")
-		charsetVal := gmeta.Get(s, "charset")
+		t, err := gstructs.StructType(table)
+		commentVal := GetTableMeta(table, "comment")
+		charsetVal := GetTableMeta(table, "charset")
+		tableNameVal := GetTableMeta(table, "tableName")
 		charset := charsetVal.String()
 		if charset == "" {
 			charset = "utf8mb4"
 		}
 
 		tableName := gstr.CaseSnake(t.Name())
+		if tableNameVal.String() != "" {
+			tableName = tableNameVal.String()
+		}
 
 		var indexList []model.Index
 		for _, v := range indexMap {
@@ -137,5 +133,27 @@ func getFromStruct(tables []Table) map[string]*model.Table {
 
 	}
 
-	return tableMap
+	return model.Schema{
+		Tables: tableMap,
+	}
+}
+
+func GetTableMeta(object interface{}, key string) *gvar.Var {
+
+	tags := map[string]string{}
+	reflectType, err := gstructs.StructType(object)
+	if err != nil {
+		return nil
+	}
+	if field, ok := reflectType.FieldByName("TableMeta"); ok {
+		if field.Type.String() == "tablesync.TableMeta" {
+			tags = gstructs.ParseTag(string(field.Tag))
+		}
+	}
+
+	v, ok := tags[key]
+	if !ok {
+		return nil
+	}
+	return gvar.New(v)
 }

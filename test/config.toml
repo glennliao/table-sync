@@ -1,0 +1,8 @@
+[database]
+    [database.logger]
+        Level = "all"
+        Stdout = true
+    [database.default]
+        Debug = true
+        #link = "mysql:root:fLkYC4t&9wLX6&cU@tcp(192.168.32.71:3306)/test_sync?charset=utf8mb4&parseTime=True&loc=Local"
+        link = "sqlite::@file(./db.sqlite3)"
