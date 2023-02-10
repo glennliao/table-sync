@@ -1,6 +1,8 @@
-package sync
+package tablesync
 
 import (
+	"github.com/glennliao/table-sync/model"
+
 	"github.com/gogf/gf/v2/errors/gcode"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/os/gstructs"
@@ -8,7 +10,7 @@ import (
 	"strings"
 )
 
-func parseDdlTag(col Column, tag string) Column {
+func parseDdlTag(col model.Column, tag string) model.Column {
 	if col.DDLTag == nil {
 		col.DDLTag = make(map[string]string)
 	}

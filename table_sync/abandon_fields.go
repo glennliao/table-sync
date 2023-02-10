@@ -1,9 +1,8 @@
-package sync
+package tablesync
 
 import (
 	"context"
 	"fmt"
-	"gdev.work/gweb/base"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gstructs"
 	"github.com/gogf/gf/v2/text/gstr"
@@ -12,7 +11,7 @@ import (
 )
 
 // CheckAbandonFields 检查table中该废弃的字段
-func CheckAbandonFields(ctx context.Context, tables []base.Table) {
+func CheckAbandonFields(ctx context.Context, tables []Table) {
 
 	gDb := g.DB()
 
