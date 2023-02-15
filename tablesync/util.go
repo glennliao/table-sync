@@ -19,7 +19,7 @@ func parseDdlTag(col model.Column, tag string) model.Column {
 		switch x[0] {
 		case "comment":
 			if len(x) > 1 {
-				col.Comment = strings.Join(x[1:], ":")
+				col.Comment = strings.ReplaceAll(strings.Join(x[1:], ":"), "'", "\\'")
 			}
 		default:
 			if x[0] != "" {

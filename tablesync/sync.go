@@ -9,6 +9,7 @@ import (
 	"github.com/gogf/gf/v2/database/gdb"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
+	"strings"
 )
 
 type Table any
@@ -60,14 +61,13 @@ func (s *Syncer) compareSchema(codeSchema model.Schema, dbSchema model.Schema) (
 			needAlter := false
 			dbCol := dbColumnMap[codeCol.Field]
 			if dbCol.Type != codeCol.Type ||
-				(!dbSchema.NoComment && dbCol.Comment != codeCol.Comment) ||
+				(!dbSchema.NoComment && strings.Trim(strings.ReplaceAll(codeCol.Comment, "\\'", "'"), "'") != dbCol.Comment) ||
 				dbCol.NotNull != codeCol.NotNull ||
-				dbCol.Default != codeCol.Default {
+				dbCol.Default != strings.Trim(codeCol.Default, "'") {
 				needAlter = true
 			}
 
 			if needAlter {
-
 				//g.Log().Debug(nil, "code", codeCol)
 				//g.Log().Debug(nil, "db", dbCol)
 

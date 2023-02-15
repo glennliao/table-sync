@@ -55,6 +55,7 @@ func (d *Mysql) LoadSchema(ctx context.Context, db gdb.DB) (schema model.Schema,
 		tableMap[index.TableName].Index = append(tableMap[index.TableName].Index, index)
 	}
 	schema.Tables = tableMap
+
 	return
 }
 
@@ -62,10 +63,12 @@ var typeMap = map[string]string{
 	"time.Time": "datetime",
 	"string":    "varchar",
 	"int8":      "tinyint(4)",
-	"uint8":     "tinyint(4) unsigned",
-	"int16":     "smallint",
-	"uint16":    "smallint unsigned",
-	"int32":     "int(10)",
+	"uint8":     "tinyint(3) unsigned",
+	"int16":     "smallint(6)",
+	"uint16":    "smallint(5) unsigned",
+	"int":       "int(11)",
+	"uint":      "int(10)",
+	"int32":     "int(11)",
 	"uint32":    "int(10) unsigned",
 	"int64":     "bigint(20)",
 	"uint64":    "bigint(20) unsigned",

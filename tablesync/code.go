@@ -6,6 +6,7 @@ import (
 	"github.com/gogf/gf/v2/container/gvar"
 	"github.com/gogf/gf/v2/os/gstructs"
 	"github.com/gogf/gf/v2/text/gstr"
+	"strings"
 )
 
 func (s *Syncer) schemaInCode(structTableList []Table) model.Schema {
@@ -54,11 +55,6 @@ func (s *Syncer) schemaInCode(structTableList []Table) model.Schema {
 
 			if col.DDLTag["default"] != "" {
 				col.Default = col.DDLTag["default"]
-			} else {
-				if col.NotNull == "null" {
-					col.Default = "NULL"
-				}
-
 			}
 
 			col.Size = col.DDLTag["size"]
@@ -125,7 +121,7 @@ func (s *Syncer) schemaInCode(structTableList []Table) model.Schema {
 
 		tableMap[tableName] = &model.Table{
 			Name:    tableName,
-			Comment: commentVal.String(),
+			Comment: strings.ReplaceAll(commentVal.String(), "'", "\\'"),
 			Charset: charset,
 			Columns: cols,
 			Index:   indexList,
