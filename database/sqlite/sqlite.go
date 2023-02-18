@@ -33,7 +33,7 @@ func (d *Sqlite) LoadSchema(ctx context.Context, db gdb.DB) (schema model.Schema
 		tableMap[table.Name] = &tables[i]
 	}
 
-	indexs, err := d.loadIndex(ctx, db, "")
+	indexs, err := loadIndex(ctx, db, "")
 	if err != nil {
 		return
 	}
@@ -49,14 +49,14 @@ func (d *Sqlite) LoadSchema(ctx context.Context, db gdb.DB) (schema model.Schema
 var typeMap = map[string]string{
 	"time.Time": "datetime",
 	"string":    "varchar",
-	"int8":      "tinyint(4)",
-	"uint8":     "tinyint(4) unsigned",
-	"int16":     "smallint",
-	"uint16":    "smallint",
+	"int8":      "INTEGER",
+	"uint8":     "INTEGER",
+	"int16":     "INTEGER",
+	"uint16":    "INTEGER",
 	"int32":     "INTEGER",
 	"uint32":    "INTEGER",
-	"int64":     "bigint(20)",
-	"uint64":    "bigint(20) unsigned",
+	"int64":     "INTEGER",
+	"uint64":    "INTEGER",
 }
 
 func (d *Sqlite) GetSqlType(ctx context.Context, goType string, size string) string {
@@ -78,7 +78,7 @@ func (d *Sqlite) GetSqlType(ctx context.Context, goType string, size string) str
 	return goType
 }
 
-func (d *Sqlite) GetSyncSql(ctx context.Context, task model.SyncTask) (list []string) {
+func (d *Sqlite) GetSyncSql(ctx context.Context, db gdb.DB, task model.SyncTask) (list []string, err error) {
 
 	for _, table := range task.CreateTable {
 		list = append(list, createTable(table)...)
@@ -88,13 +88,29 @@ func (d *Sqlite) GetSyncSql(ctx context.Context, task model.SyncTask) (list []st
 		list = append(list, addColumn(col.TableName, col)...)
 	}
 
+	var alterTable = map[string]struct{}{}
+
 	for _, col := range task.AlterColumn {
-		list = append(list, alterColumn(col.TableName, col)...)
+		alterTable[col.TableName] = struct{}{}
 	}
 
-	for _, index := range task.AddIndex {
-		list = append(list, addIndex(index.TableName, index)...)
+	for tableName, _ := range alterTable {
+		for _, table := range task.SchemaInCode.Tables {
+			if table.Name == tableName {
+				sqlList, err := alterColumn(ctx, db, table)
+				if err != nil {
+					return nil, err
+				}
+				list = append(list, sqlList...)
+				break
+			}
+		}
 	}
+
+	//
+	//for _, index := range task.AddIndex {
+	//	list = append(list, addIndex(index.TableName, index)...)
+	//}
 
 	return
 }
@@ -127,7 +143,7 @@ func (d *Sqlite) loadColumns(ctx context.Context, db gdb.DB, tableName string) (
 			Type:    col.Type,
 			Kind:    "",
 			Comment: "",
-			Default: col.DfltValue,
+			Default: strings.Trim(col.DfltValue, "'"),
 			NotNull: col.Notnull,
 			EXTRA:   "",
 			Size:    "",
@@ -148,8 +164,8 @@ func (d *Sqlite) loadColumns(ctx context.Context, db gdb.DB, tableName string) (
 	return
 }
 
-func (d *Sqlite) loadIndex(ctx context.Context, db gdb.DB, schemaName string) (list []model.Index, err error) {
-	sql := "SELECT * FROM sqlite_master WHERE type = 'index' "
+func loadIndex(ctx context.Context, db gdb.DB, schemaName string) (list []model.Index, err error) {
+	sql := "SELECT * FROM sqlite_master WHERE type = 'index'"
 
 	type SqliteIndex struct {
 		Name    string
@@ -179,8 +195,6 @@ func createTable(table model.Table) []string {
 	var colSqlList []string
 
 	for _, column := range table.Columns {
-		column.Comment = strings.ReplaceAll(column.Comment, "'", "\\'")
-
 		if column.PrimaryKey {
 			colSqlList = append(colSqlList, fmt.Sprintf("\t`%s` %s PRIMARY KEY AUTOINCREMENT NOT NULL ", column.Field, column.Type))
 		} else {
@@ -211,7 +225,7 @@ func createTable(table model.Table) []string {
 			} else {
 				indexSql += "CREATE INDEX"
 			}
-			indexSql += " " + index.Name + " on " + table.Name + " ("
+			indexSql += " " + table.Name + "_" + index.Name + " on " + table.Name + " ("
 
 			for i, column := range index.Columns {
 				index.Columns[i] = "`" + column + "`"
@@ -232,21 +246,32 @@ func addColumn(tableName string, col model.Column) []string {
 	return []string{addColumnSql}
 }
 
-func alterColumn(tableName string, toCol model.Column) []string {
+func alterColumn(ctx context.Context, db gdb.DB, table *model.Table) ([]string, error) {
+	var sqlList []string
+	tableName, tempTableName := table.Name, table.Name+"__temp_remove"
+	renameSql := fmt.Sprintf("ALTER TABLE %s RENAME TO %s;", tableName, tempTableName)
+	sqlList = append(sqlList, renameSql)
 
-	alterSql := ""
-
-	alterSql += " " + toCol.Type + " "
-	alterSql += " " + toCol.NotNull + " "
-	if toCol.Default != "" {
-		alterSql += " DEFAULT " + toCol.Default
+	indexList, err := loadIndex(ctx, db, tableName)
+	if err != nil {
+		return nil, err
 	}
-	if toCol.PrimaryKey && toCol.Field == "id" {
-		alterSql += " AUTO_INCREMENT "
+	for _, index := range indexList {
+		if index.TableName == tableName {
+			sqlList = append(sqlList, fmt.Sprintf("DROP INDEX %s", index.Name))
+		}
 	}
-	alterSql = fmt.Sprintf("alter table `%s` MODIFY column `%s` %s", tableName, toCol.Field, alterSql)
-	return []string{alterSql}
 
+	sqlList = append(sqlList, createTable(*table)...)
+
+	// CREATE INDEX ix_name ON old_table_name(field_name);
+
+	dataSql := fmt.Sprintf("INSERT INTO %s SELECT * FROM %s;", tableName, tempTableName)
+	sqlList = append(sqlList, dataSql)
+
+	dropSql := fmt.Sprintf("DROP TABLE %s;", tempTableName)
+	sqlList = append(sqlList, dropSql)
+	return sqlList, nil
 }
 
 func addIndex(tableName string, index model.Index) []string {

@@ -31,6 +31,7 @@ func (s *Syncer) Sync(ctx context.Context, db gdb.DB) error {
 		return gerror.Cause(err)
 	}
 	syncTask := s.compareSchema(schemaInCode, schemaInDB)
+	syncTask.SchemaInCode = schemaInCode
 	return s.sync(ctx, db, syncTask)
 }
 
@@ -92,7 +93,10 @@ func (s *Syncer) compareSchema(codeSchema model.Schema, dbSchema model.Schema) (
 
 func (s *Syncer) sync(ctx context.Context, db gdb.DB, task model.SyncTask) error {
 
-	sqlList := database.RegMap[s.DatabaseType].GetSyncSql(ctx, task)
+	sqlList, err := database.RegMap[s.DatabaseType].GetSyncSql(ctx, db, task)
+	if err != nil {
+		return err
+	}
 	if len(sqlList) > 0 {
 		return db.Transaction(ctx, func(ctx context.Context, tx gdb.TX) error {
 			var err error

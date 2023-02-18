@@ -19,6 +19,7 @@ type User struct {
 	UpdatedAt           time.Time
 	UpdatedBy           string
 	State               int8
+	AddField            string `ddl:"size:3;uniqueIndex"`
 }
 
 type RedisConnection struct {

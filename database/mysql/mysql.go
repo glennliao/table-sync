@@ -93,7 +93,7 @@ func (d *Mysql) GetSqlType(ctx context.Context, goType string, size string) stri
 	return goType
 }
 
-func (d *Mysql) GetSyncSql(ctx context.Context, task model.SyncTask) (list []string) {
+func (d *Mysql) GetSyncSql(ctx context.Context, db gdb.DB, task model.SyncTask) (list []string, err error) {
 
 	for _, table := range task.CreateTable {
 		list = append(list, createTable(table)...)
@@ -153,8 +153,6 @@ func createTable(table model.Table) []string {
 	primaryKey := ""
 
 	for _, column := range table.Columns {
-
-		column.Comment = strings.ReplaceAll(column.Comment, "'", "\\'")
 
 		if column.PrimaryKey {
 			primaryKey = column.Field

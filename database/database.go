@@ -9,7 +9,7 @@ import (
 type Database interface {
 	LoadSchema(ctx context.Context, db gdb.DB) (model.Schema, error)
 	GetSqlType(ctx context.Context, goType string, size string) string
-	GetSyncSql(ctx context.Context, task model.SyncTask) []string
+	GetSyncSql(ctx context.Context, db gdb.DB, task model.SyncTask) ([]string, error)
 }
 
 var RegMap = map[string]Database{}

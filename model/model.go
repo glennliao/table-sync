@@ -38,8 +38,9 @@ type Column struct {
 }
 
 type SyncTask struct {
-	CreateTable []Table
-	AddColumn   []Column
-	AlterColumn []Column
-	AddIndex    []Index
+	CreateTable  []Table
+	AddColumn    []Column
+	AlterColumn  []Column
+	AddIndex     []Index
+	SchemaInCode Schema
 }
