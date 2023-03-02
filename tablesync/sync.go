@@ -83,8 +83,9 @@ func (s *Syncer) compareSchema(codeSchema model.Schema, dbSchema model.Schema) (
 		}
 
 		for _, codeIndex := range codeTable.Index {
-			if v, exists := dbIndexMap[codeIndex.Name]; !exists {
-				task.AddIndex = append(task.AddIndex, v)
+			if _, exists := dbIndexMap[codeIndex.Name]; !exists {
+				codeIndex.TableName = tableName
+				task.AddIndex = append(task.AddIndex, codeIndex)
 			}
 		}
 	}
