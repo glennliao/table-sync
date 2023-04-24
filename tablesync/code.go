@@ -2,11 +2,12 @@ package tablesync
 
 import (
 	"context"
+	"strings"
+
 	"github.com/glennliao/table-sync/model"
 	"github.com/gogf/gf/v2/container/gvar"
 	"github.com/gogf/gf/v2/os/gstructs"
 	"github.com/gogf/gf/v2/text/gstr"
-	"strings"
 )
 
 func (s *Syncer) schemaInCode(structTableList []Table) model.Schema {
