@@ -3,10 +3,11 @@ package mysql
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/glennliao/table-sync/database"
 	"github.com/glennliao/table-sync/model"
 	"github.com/gogf/gf/v2/database/gdb"
-	"strings"
 )
 
 func init() {
@@ -115,13 +116,13 @@ func (d *Mysql) GetSyncSql(ctx context.Context, db gdb.DB, task model.SyncTask) 
 }
 
 func (d *Mysql) loadTables(ctx context.Context, db gdb.DB, schemaName string) (list []model.Table, err error) {
-	sql := "select table_name ,table_comment from information_schema.tables where table_type = 'BASE TABLE' and table_schema = ? "
+	sql := "SELECT table_name,table_comment from information_schema.tables where table_type = 'BASE TABLE' and table_schema = ? "
 	err = db.GetScan(ctx, &list, sql, schemaName)
 	return
 }
 
 func (d *Mysql) loadColumns(ctx context.Context, db gdb.DB, schemaName string) (list []model.Column, err error) {
-	sql := "select column_name ,column_type,DATA_TYPE,column_comment,table_name,COLUMN_DEFAULT,IS_NULLABLE,EXTRA from information_schema.COLUMNS where  table_schema = ?  "
+	sql := "SELECT column_name,column_type,DATA_TYPE,column_comment,table_name,COLUMN_DEFAULT,IS_NULLABLE,EXTRA from information_schema.COLUMNS where  table_schema = ?  "
 	err = db.GetScan(ctx, &list, sql, schemaName)
 	if err == nil {
 		for i, column := range list {
@@ -215,7 +216,7 @@ func createTable(table model.Table) []string {
 
 func addColumn(tableName string, col model.Column) []string {
 
-	addColumnSql := fmt.Sprintf("alter table `%s` add `%s`  %s %s comment '%s'", tableName, col.Field, col.Type, col.NotNull, col.Comment)
+	addColumnSql := fmt.Sprintf("ALTER TABLE `%s` add `%s`  %s %s COMMENT '%s'", tableName, col.Field, col.Type, col.NotNull, col.Comment)
 	return []string{addColumnSql}
 }
 
@@ -231,7 +232,7 @@ func alterColumn(tableName string, toCol model.Column) []string {
 		alterSql += " AUTO_INCREMENT "
 	}
 	alterSql += " comment '" + toCol.Comment + "' "
-	alterSql = fmt.Sprintf("alter table `%s` MODIFY column `%s` %s", tableName, toCol.Field, alterSql)
+	alterSql = fmt.Sprintf("ALTER TABLE `%s` MODIFY COLUMN `%s` %s", tableName, toCol.Field, alterSql)
 	return []string{alterSql}
 
 }

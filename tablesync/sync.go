@@ -6,6 +6,7 @@ import (
 
 	"github.com/glennliao/table-sync/database"
 	_ "github.com/glennliao/table-sync/database/mysql"
+	_ "github.com/glennliao/table-sync/database/pgsql"
 	_ "github.com/glennliao/table-sync/database/sqlite"
 	"github.com/glennliao/table-sync/model"
 	"github.com/gogf/gf/v2/database/gdb"

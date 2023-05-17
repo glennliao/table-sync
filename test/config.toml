@@ -4,5 +4,16 @@
         Stdout = true
     [database.default]
         Debug = true
-        #link = "mysql:root:root@tcp(127.0.0.1:3306)/test_sync?charset=utf8mb4&parseTime=True&loc=Local"
         link = "sqlite::@file(./db.sqlite3)"
+
+    [database.sqlite]
+        Debug = true
+        link = "sqlite::@file(./db.sqlite3)"
+
+    [database.mysql]
+        Debug = true
+        link = "mysql:root:root@tcp(127.0.0.1:3306)/test_sync?charset=utf8mb4&parseTime=True&loc=Local"
+
+    [database.pgsql]
+        Debug = true
+        link = "pgsql:postgres:postgres@tcp(127.0.0.1:5432)/test_sync"
