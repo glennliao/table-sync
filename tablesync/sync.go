@@ -61,18 +61,16 @@ func (s *Syncer) compareSchema(codeSchema model.Schema, dbSchema model.Schema) (
 				continue
 			}
 
-			needAlter := false
 			dbCol := dbColumnMap[codeCol.Field]
-			if dbCol.Type != codeCol.Type ||
-				(!dbSchema.NoComment && strings.Trim(strings.ReplaceAll(codeCol.Comment, "\\'", "'"), "") != strings.Trim(dbCol.Comment, "")) ||
-				dbCol.NotNull != codeCol.NotNull ||
-				dbCol.Default != strings.Trim(codeCol.Default, "'") {
-				needAlter = true
-			}
 
-			if needAlter {
-				//g.Log().Debug(nil, "code", codeCol)
-				//g.Log().Debug(nil, "db", dbCol)
+			typeDiff := dbCol.Type != codeCol.Type
+			commentDiff := !dbSchema.NoComment && strings.Trim(strings.ReplaceAll(codeCol.Comment, "\\'", "'"), "") != strings.Trim(dbCol.Comment, "")
+			notNullDiff := dbCol.NotNull != codeCol.NotNull
+			defaultDiff := dbCol.Default != strings.Trim(codeCol.Default, "'")
+
+			if typeDiff || commentDiff || notNullDiff || defaultDiff {
+				// g.Log().Debug(nil, "code", codeCol)
+				// g.Log().Debug(nil, "db", dbCol)
 
 				task.AlterColumn = append(task.AlterColumn, codeCol)
 			}

@@ -32,7 +32,7 @@ type Column struct {
 	Default    string `orm:"COLUMN_DEFAULT"`                //
 	NotNull    string `orm:"IS_NULLABLE"`                   // not null/null
 	EXTRA      string
-	Size       string
+	Size       string `orm:"NUMERIC_PRECISION"`
 	PrimaryKey bool
 	DDLTag     map[string]string
 }

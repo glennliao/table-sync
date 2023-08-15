@@ -63,13 +63,13 @@ func (d *Mysql) LoadSchema(ctx context.Context, db gdb.DB) (schema model.Schema,
 var typeMap = map[string]string{
 	"time.Time": "datetime",
 	"string":    "varchar",
-	"int8":      "tinyint(4)",
+	"int8":      "tinyint(3)",
 	"uint8":     "tinyint(3) unsigned",
 	"int16":     "smallint(6)",
 	"uint16":    "smallint(5) unsigned",
-	"int":       "int(11)",
+	"int":       "int(10)",
 	"uint":      "int(10)",
-	"int32":     "int(11)",
+	"int32":     "int(10)",
 	"uint32":    "int(10) unsigned",
 	"int64":     "bigint(20)",
 	"uint64":    "bigint(20) unsigned",
@@ -122,7 +122,7 @@ func (d *Mysql) loadTables(ctx context.Context, db gdb.DB, schemaName string) (l
 }
 
 func (d *Mysql) loadColumns(ctx context.Context, db gdb.DB, schemaName string) (list []model.Column, err error) {
-	sql := "SELECT column_name,column_type,DATA_TYPE,column_comment,table_name,COLUMN_DEFAULT,IS_NULLABLE,EXTRA from information_schema.COLUMNS where  table_schema = ?  "
+	sql := "SELECT column_name,column_type,DATA_TYPE,column_comment,table_name,COLUMN_DEFAULT,NUMERIC_PRECISION,IS_NULLABLE,EXTRA from information_schema.COLUMNS where  table_schema = ?  "
 	err = db.GetScan(ctx, &list, sql, schemaName)
 	if err == nil {
 		for i, column := range list {
@@ -131,8 +131,17 @@ func (d *Mysql) loadColumns(ctx context.Context, db gdb.DB, schemaName string) (
 			} else {
 				list[i].NotNull = "not null"
 			}
+
+			// mysql8 type NOT INCLUDES (SIZE)
+			if strings.Contains(column.Type, "int ") {
+				list[i].Type = strings.Replace(column.Type, "int ", fmt.Sprintf("int(%s) ", column.Size), 1)
+			}
+			if strings.HasSuffix(column.Type, "int") {
+				list[i].Type = column.Type + fmt.Sprintf("(%s)", column.Size)
+			}
 		}
 	}
+
 	return
 }
 
