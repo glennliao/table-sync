@@ -34,7 +34,7 @@ func (s *Syncer) schemaInCode(structTableList []Table) model.Schema {
 			colType := field.Type().String()
 
 			col := model.Column{
-				Field: gstr.CaseSnake(field.Name()),
+				Field: convertCamelToUnderScore(field.Name()),
 				Type:  colType,
 			}
 

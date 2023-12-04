@@ -95,14 +95,21 @@ type _Function struct {
 	Back                string     `ddl:"size:128;comment:返回值示例"`
 }
 
+type Test struct {
+	tablesync.TableMeta `charset:"utf8mb4" comment:""`
+	Id                  uint32 `ddl:"primaryKey"`
+	Md5                 string
+}
+
 func main() {
 
 	tables := []tablesync.Table{
 		User{},
-		RedisConnection{},
-		Access{},
-		_Request{},
-		_Function{},
+		//RedisConnection{},
+		//Access{},
+		//_Request{},
+		//_Function{},
+		Test{},
 	}
 
 	ctx := context.TODO()

@@ -1,7 +1,9 @@
 package tablesync
 
 import (
+	"bytes"
 	"github.com/glennliao/table-sync/model"
+	"unicode"
 
 	"github.com/gogf/gf/v2/errors/gcode"
 	"github.com/gogf/gf/v2/errors/gerror"
@@ -176,4 +178,23 @@ func ListEq[T comparable](a, b []T) bool {
 	}
 
 	return true
+}
+
+func convertCamelToUnderScore(str string) string {
+	buffer := bytes.NewBufferString("")
+	for i, r := range str {
+		if unicode.IsUpper(r) {
+			if i != 0 {
+				if unicode.IsLower(rune2(str, i-1)) || (unicode.IsUpper(rune2(str, i-1)) && i+1 < len(str) && unicode.IsLower(rune2(str, i+1))) {
+					buffer.WriteString("_")
+				}
+			}
+		}
+		buffer.WriteRune(unicode.ToLower(r))
+	}
+	return buffer.String()
+}
+
+func rune2(s string, index int) rune {
+	return []rune(s)[index]
 }

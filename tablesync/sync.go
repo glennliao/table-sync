@@ -63,7 +63,7 @@ func (s *Syncer) compareSchema(codeSchema model.Schema, dbSchema model.Schema) (
 
 			dbCol := dbColumnMap[codeCol.Field]
 
-			typeDiff := dbCol.Type != codeCol.Type
+			typeDiff := dbCol.Type != codeCol.Type && strings.ToLower(dbCol.Type) != codeCol.Type
 			commentDiff := !dbSchema.NoComment && strings.Trim(strings.ReplaceAll(codeCol.Comment, "\\'", "'"), "") != strings.Trim(dbCol.Comment, "")
 			notNullDiff := dbCol.NotNull != codeCol.NotNull
 			defaultDiff := dbCol.Default != strings.Trim(codeCol.Default, "'")
