@@ -122,7 +122,7 @@ func (d *Mysql) loadTables(ctx context.Context, db gdb.DB, schemaName string) (l
 }
 
 func (d *Mysql) loadColumns(ctx context.Context, db gdb.DB, schemaName string) (list []model.Column, err error) {
-	sql := "SELECT column_name AS field,column_type AS type,DATA_TYPE as kind,column_comment AS comment,table_name AS tableName ,COLUMN_DEFAULT AS default,NUMERIC_PRECISION AS Size,IS_NULLABLE AS notNull,EXTRA from information_schema.COLUMNS where  table_schema = ?  "
+	sql := "SELECT column_name AS field,column_type AS type,DATA_TYPE as kind,column_comment AS comment,table_name AS tableName ,COLUMN_DEFAULT AS `default`,NUMERIC_PRECISION AS Size,IS_NULLABLE AS notNull,EXTRA from information_schema.COLUMNS where  table_schema = ?  "
 	err = db.GetScan(ctx, &list, sql, schemaName)
 	if err == nil {
 		for i, column := range list {
