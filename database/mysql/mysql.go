@@ -116,13 +116,13 @@ func (d *Mysql) GetSyncSql(ctx context.Context, db gdb.DB, task model.SyncTask) 
 }
 
 func (d *Mysql) loadTables(ctx context.Context, db gdb.DB, schemaName string) (list []model.Table, err error) {
-	sql := "SELECT table_name,table_comment from information_schema.tables where table_type = 'BASE TABLE' and table_schema = ? "
+	sql := "SELECT table_name AS name,table_comment AS comment FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_schema = ? "
 	err = db.GetScan(ctx, &list, sql, schemaName)
 	return
 }
 
 func (d *Mysql) loadColumns(ctx context.Context, db gdb.DB, schemaName string) (list []model.Column, err error) {
-	sql := "SELECT column_name,column_type,DATA_TYPE,column_comment,table_name,COLUMN_DEFAULT,NUMERIC_PRECISION,IS_NULLABLE,EXTRA from information_schema.COLUMNS where  table_schema = ?  "
+	sql := "SELECT column_name AS field,column_type AS type,DATA_TYPE as kind,column_comment AS comment,table_name AS tableName ,COLUMN_DEFAULT AS default,NUMERIC_PRECISION AS Size,IS_NULLABLE AS notNull,EXTRA from information_schema.COLUMNS where  table_schema = ?  "
 	err = db.GetScan(ctx, &list, sql, schemaName)
 	if err == nil {
 		for i, column := range list {
@@ -146,7 +146,7 @@ func (d *Mysql) loadColumns(ctx context.Context, db gdb.DB, schemaName string) (
 }
 
 func (d *Mysql) loadIndex(ctx context.Context, db gdb.DB, schemaName string) (list []model.Index, err error) {
-	sql := "SELECT table_name,non_unique,index_name,GROUP_CONCAT(column_name ORDER BY seq_in_index) AS `Columns` FROM information_schema.statistics a WHERE table_schema = ? GROUP BY a.TABLE_SCHEMA,a.TABLE_NAME,a.index_name,a.non_unique  "
+	sql := "SELECT table_name AS tableName,non_unique AS unique,index_name AS name,GROUP_CONCAT(column_name ORDER BY seq_in_index) AS `Columns` FROM information_schema.statistics a WHERE table_schema = ? GROUP BY a.TABLE_SCHEMA,a.TABLE_NAME,a.index_name,a.non_unique  "
 	err = db.GetScan(ctx, &list, sql, schemaName)
 	if err == nil {
 		for i, _ := range list {

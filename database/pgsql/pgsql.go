@@ -128,8 +128,8 @@ func (d *Pgsql) LoadSchema(ctx context.Context, db gdb.DB) (schema model.Schema,
 func (d *Pgsql) loadTables(ctx context.Context, db gdb.DB, schema string) (list []model.Table, err error) {
 	sql := `
 SELECT
-    c.relname AS table_name,
-    obj_description(c.oid) AS table_comment
+    c.relname AS name,
+    obj_description(c.oid) AS comment
 FROM
     pg_class c
     INNER JOIN pg_namespace n ON c.relnamespace = n.oid
