@@ -146,7 +146,7 @@ func (d *Mysql) loadColumns(ctx context.Context, db gdb.DB, schemaName string) (
 }
 
 func (d *Mysql) loadIndex(ctx context.Context, db gdb.DB, schemaName string) (list []model.Index, err error) {
-	sql := "SELECT table_name AS tableName,non_unique AS unique,index_name AS name,GROUP_CONCAT(column_name ORDER BY seq_in_index) AS `Columns` FROM information_schema.statistics a WHERE table_schema = ? GROUP BY a.TABLE_SCHEMA,a.TABLE_NAME,a.index_name,a.non_unique  "
+	sql := "SELECT table_name AS tableName,non_unique AS `unique`,index_name AS name,GROUP_CONCAT(column_name ORDER BY seq_in_index) AS `Columns` FROM information_schema.statistics a WHERE table_schema = ? GROUP BY a.TABLE_SCHEMA,a.TABLE_NAME,a.index_name,a.non_unique  "
 	err = db.GetScan(ctx, &list, sql, schemaName)
 	if err == nil {
 		for i, _ := range list {
